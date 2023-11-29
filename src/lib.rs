@@ -33,6 +33,8 @@ pub use tokio_native_tls as native_tls;
 pub use tokio_openssl as openssl;
 #[cfg(feature = "rustls")]
 pub use tokio_rustls as rustls;
+#[cfg(feature = "s2n-tls")]
+pub use s2n_tls_tokio as s2n_tls;
 
 #[cfg(feature = "rt")]
 mod spawning_handshake;
@@ -329,6 +331,21 @@ where
         })
     }
 }
+
+#[cfg(feature = "s2n-tls")]
+#[cfg_attr(docsrs, doc(cfg(feature = "s2n-tls")))]
+impl<C: AsyncRead + AsyncWrite + Unpin + Send + 'static> AsyncTls<C> for s2n_tls_tokio::TlsAcceptor {
+    type Stream = s2n_tls_tokio::TlsStream<C>;
+    type Error = s2n_tls_impl::error::Error;
+
+    type AcceptFuture = Pin<Box<dyn Future<Output = Result<Self::Stream, Self::Error>> + Send>>;
+
+    fn accept(&self, stream: C) -> Self::AcceptFuture {
+        let tls = self.clone();
+        Box::pin(async move { s2n_tls_tokio::TlsAcceptor::accept(&tls, stream).await })
+    }
+}
+
 
 impl<T> Builder<T> {
     /// Set the maximum number of concurrent handshakes.

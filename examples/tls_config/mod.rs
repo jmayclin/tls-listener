@@ -1,3 +1,11 @@
+
+const CERT: &[u8] = include_bytes!("local.cert");
+const PKEY: &[u8] = include_bytes!("local.key");
+#[allow(dead_code)]
+const CERT2: &[u8] = include_bytes!("local2.cert");
+#[allow(dead_code)]
+const PKEY2: &[u8] = include_bytes!("local2.key");
+
 #[cfg(feature = "rustls")]
 mod config {
     use std::sync::Arc;
@@ -37,7 +45,7 @@ mod config {
 
 #[cfg(all(
     feature = "native-tls",
-    not(any(feature = "rustls", feature = "openssl"))
+    not(any(feature = "rustls", feature = "openssl", feature = "s2n-tls"))
 ))]
 mod config {
     use tokio_native_tls::native_tls::{Identity, TlsAcceptor};
@@ -63,7 +71,7 @@ mod config {
 
 #[cfg(all(
     feature = "openssl",
-    not(any(feature = "rustls", feature = "native-tls"))
+    not(any(feature = "rustls", feature = "native-tls", feature = "s2n-tls"))
 ))]
 mod config {
     use openssl_impl::ssl::{SslContext, SslFiletype, SslMethod};
@@ -95,6 +103,41 @@ mod config {
             "./examples/tls_config/local2.key",
         )
     }
+}
+
+#[cfg(all(
+    feature = "s2n-tls",
+    not(any(feature = "rustls", feature = "native-tls", feature = "openssl"))
+))]
+mod config {
+    use s2n_tls_impl::config::Config;
+    use std::path::Path;
+
+    pub type Acceptor = s2n_tls_tokio::TlsAcceptor;
+
+    fn tls_acceptor_impl<P: AsRef<Path>>(cert_file: P, key_file: P) -> Acceptor {
+        let mut builder = Config::builder();
+        builder
+            .load_pem(
+                &std::fs::read(cert_file).unwrap(),
+                &std::fs::read(key_file).unwrap(),
+            )
+            .unwrap();
+        let config = builder.build().unwrap();
+        Acceptor::new(config)
+    }
+
+    pub fn tls_acceptor() -> Acceptor {
+        tls_acceptor_impl(
+            "./examples/tls_config/local2.cert",
+            "./examples/tls_config/local2.key",
+        )    }
+
+    pub fn tls_acceptor2() -> Acceptor {
+        tls_acceptor_impl(
+            "./examples/tls_config/local2.cert",
+            "./examples/tls_config/local2.key",
+        )    }
 }
 
 pub use config::*;

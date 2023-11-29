@@ -10,6 +10,7 @@ license = "Apache-2.0"
 [features]
 default = ["tokio-net"]
 rustls = ["tokio-rustls"]
+s2n-tls = ["s2n-tls-tokio", "s2n-tls-impl"]
 native-tls = ["tokio-native-tls"]
 openssl = ["tokio-openssl", "openssl_impl"]
 rt = ["tokio/rt"]
@@ -27,6 +28,8 @@ tokio = { version = "1.0", features = ["time"] }
 tokio-native-tls = { version = "0.3.0", optional = true }
 tokio-rustls = { version = "0.24.0", optional = true }
 tokio-openssl = { version = "0.6.3", optional = true }
+s2n-tls-impl = { package = "s2n-tls", version = "0.0.41", optional = true }
+s2n-tls-tokio = { version = "0.0.41", optional = true }
 openssl_impl = { package = "openssl", version = "0.10.32", optional = true }
 
 [dev-dependencies]
